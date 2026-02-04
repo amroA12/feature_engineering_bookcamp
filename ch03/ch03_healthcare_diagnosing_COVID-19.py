@@ -26,7 +26,7 @@ covid_flu['Age'] = covid_flu['Age'].fillna(covid_flu['Age'].median()) + 0.01
 
 
 categorical_columns = covid_flu.select_dtypes(include=['O']).columns.tolist()
-categorical_columns.remove('Diagnosis')  # الهدف
+categorical_columns.remove('Diagnosis')  
 
 covid_flu['Female'] = covid_flu['Sex'] == 'F'
 del covid_flu['Sex']
@@ -130,4 +130,5 @@ def simple_grid_search(x_train, y_train, x_test, y_test, feature_engineering_pip
 
 
 best_model = simple_grid_search(x_train, y_train, x_test, y_test, simple_fe)
+
 
