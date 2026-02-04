@@ -14,28 +14,20 @@ from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MultiLabelBinarizer
 
-# -----------------------------------------
-# 1. تحميل البيانات
-# -----------------------------------------
+
 covid_flu = pd.read_csv(r'D:\python\feature engineering bookcamp\ch03\covid_flu.csv')
 
-# -----------------------------------------
-# 2. التعامل مع المتغيرات الرقمية
-# -----------------------------------------
+
 numeric_types = ['float16', 'float32', 'float64', 'int16', 'int32', 'int64']
 numerical_columns = covid_flu.select_dtypes(include=numeric_types).columns.tolist()
-# لا حاجة لإزالة 'Diagnosis' لأنه نصي وليس رقمي
 
-# إصلاح الأعمار صفرية لتفادي مشاكل Box-Cox
+
 covid_flu['Age'] = covid_flu['Age'].fillna(covid_flu['Age'].median()) + 0.01
 
-# -----------------------------------------
-# 3. التعامل مع المتغيرات الفئوية
-# -----------------------------------------
+
 categorical_columns = covid_flu.select_dtypes(include=['O']).columns.tolist()
 categorical_columns.remove('Diagnosis')  # الهدف
 
-# تحويل بعض الأعمدة إلى ثنائية
 covid_flu['Female'] = covid_flu['Sex'] == 'F'
 del covid_flu['Sex']
 
@@ -46,13 +38,10 @@ binary_features = [
     'SoreThroat', 'NauseaVomitting', 'Fatigue', 'InitialPCRDiagnosis'
 ]
 
-# إنشاء عمود FluSymptoms
 covid_flu['FluSymptoms'] = covid_flu[['Diarrhea','Fever','Coughing','SoreThroat','NauseaVomitting','Fatigue']].sum(axis=1) >= 1
 binary_features.append('FluSymptoms')
 
-# -----------------------------------------
-# 4. دالة DummifyRiskFactor
-# -----------------------------------------
+
 class DummifyRiskFactor(BaseEstimator, TransformerMixin):
     def __init__(self):
         self.label_binarizer = None
@@ -71,17 +60,13 @@ class DummifyRiskFactor(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         return self.label_binarizer.transform(X.apply(self.parse_risk_factors))
 
-# -----------------------------------------
-# 5. إنشاء X و y
-# -----------------------------------------
+
 X, y = covid_flu.drop(['Diagnosis'], axis=1), covid_flu['Diagnosis']
 x_train, x_test, y_train, y_test = train_test_split(
     X, y, stratify=y, random_state=0, test_size=0.2
 )
 
-# -----------------------------------------
-# 6. إنشاء Pipelines
-# -----------------------------------------
+
 risk_factor_pipeline = Pipeline([
     ('select_risk_factor', FunctionTransformer(lambda df: df['RiskFactors'])),
     ('fillna', FunctionTransformer(lambda s: s.fillna(''))),
@@ -103,16 +88,13 @@ numerical_pipeline = Pipeline([
     ('bins', KBinsDiscretizer(n_bins=10, encode='ordinal', strategy='kmeans'))
 ])
 
-# دمج كل المعالجات
 simple_fe = FeatureUnion([
     ('risk_factors', risk_factor_pipeline),
     ('binary_pipeline', binary_pipeline),
     ('numerical_pipeline', numerical_pipeline)
 ])
 
-# -----------------------------------------
-# 7. دالة التدريب والتقييم
-# -----------------------------------------
+
 def simple_grid_search(x_train, y_train, x_test, y_test, feature_engineering_pipeline=None):
     params = {
         'max_depth': [10, None],
@@ -146,7 +128,6 @@ def simple_grid_search(x_train, y_train, x_test, y_test, feature_engineering_pip
     
     return best_model
 
-# -----------------------------------------
-# 8. تشغيل التدريب والتقييم
-# -----------------------------------------
+
 best_model = simple_grid_search(x_train, y_train, x_test, y_test, simple_fe)
+
